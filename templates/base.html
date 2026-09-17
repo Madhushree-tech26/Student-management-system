@@ -23,6 +23,22 @@
             <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
                 Student Management System
             </a>
+            <div>
+            <a class="btn btn-light btn-sm me-2"
+               href="{{ url_for('dashboard') }}">
+                Dashboard
+            </a>
+
+            <a class="btn btn-light btn-sm me-2"
+               href="{{ url_for('students_page') }}">
+                Students
+            </a>
+
+            <a class="btn btn-warning btn-sm"
+               href="{{ url_for('logout') }}">
+                Logout
+            </a>
+        </div>
         </div>
     </nav>
 
