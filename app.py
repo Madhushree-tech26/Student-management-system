@@ -1,10 +1,20 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    jsonify,
+    session
+)
 import sqlite3
 import os
 import re
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "student-management-secret-key")
+app.config["SESSION_COOKIE_HTTPONLY"] = True
 
 DATABASE = "students.db"
 
@@ -90,41 +100,16 @@ def validate_student_form(form):
 
 @app.route("/")
 def index():
-    search = request.args.get("search", "").strip()
+     if user_is_logged_in():
+        return redirect(url_for("dashboard"))
 
-    connection = get_db_connection()
-
-    if search:
-        students = connection.execute("""
-            SELECT * FROM students
-            WHERE name LIKE ?
-               OR email LIKE ?
-               OR department LIKE ?
-               OR phone LIKE ?
-            ORDER BY id DESC
-        """, (
-            f"%{search}%",
-            f"%{search}%",
-            f"%{search}%",
-            f"%{search}%"
-        )).fetchall()
-    else:
-        students = connection.execute("""
-            SELECT * FROM students
-            ORDER BY id DESC
-        """).fetchall()
-
-    connection.close()
-
-    return render_template(
-        "index.html",
-        students=students,
-        search=search
-    )
-
+    return redirect(url_for("login"))
 
 @app.route("/add", methods=["POST"])
 def add_student():
+    
+    if not user_is_logged_in():
+        return redirect(url_for("login"))
     student, errors = validate_student_form(request.form)
 
     if errors:
@@ -162,6 +147,9 @@ def add_student():
 
 @app.route("/edit/<int:student_id>", methods=["GET", "POST"])
 def edit_student(student_id):
+     if not user_is_logged_in():
+        return redirect(url_for("login"))
+
     connection = get_db_connection()
 
     student = connection.execute("""
@@ -235,6 +223,8 @@ def edit_student(student_id):
 
 @app.route("/delete/<int:student_id>", methods=["POST"])
 def delete_student(student_id):
+    if not user_is_logged_in():
+        return redirect(url_for("login"))
     connection = get_db_connection()
 
     student = connection.execute("""
@@ -422,6 +412,112 @@ def api_delete_student(student_id):
 
 
 initialize_database()
+def user_is_logged_in():
+    return session.get("logged_in") is True
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+
+        if username == "admin" and password == "admin123":
+            session["logged_in"] = True
+            session["username"] = username
+
+            flash("Login successful.", "success")
+            return redirect(url_for("dashboard"))
+
+        flash("Invalid username or password.", "danger")
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("You have been logged out.", "success")
+    return redirect(url_for("login"))
+
+
+@app.route("/dashboard")
+def dashboard():
+    if not user_is_logged_in():
+        return redirect(url_for("login"))
+
+    connection = get_db_connection()
+
+    total_students = connection.execute("""
+        SELECT COUNT(*) AS count
+        FROM students
+    """).fetchone()["count"]
+
+    department_count = connection.execute("""
+        SELECT COUNT(DISTINCT department) AS count
+        FROM students
+    """).fetchone()["count"]
+
+    first_year_count = connection.execute("""
+        SELECT COUNT(*) AS count
+        FROM students
+        WHERE year = 1
+    """).fetchone()["count"]
+
+    final_year_count = connection.execute("""
+        SELECT COUNT(*) AS count
+        FROM students
+        WHERE year = 4
+    """).fetchone()["count"]
+
+    connection.close()
+
+    return render_template(
+        "dashboard.html",
+        total_students=total_students,
+        department_count=department_count,
+        first_year_count=first_year_count,
+        final_year_count=final_year_count
+    )
+
+
+@app.route("/students")
+def students_page():
+    if not user_is_logged_in():
+        return redirect(url_for("login"))
+
+    search = request.args.get("search", "").strip()
+
+    connection = get_db_connection()
+
+    if search:
+        students = connection.execute("""
+            SELECT * FROM students
+            WHERE name LIKE ?
+               OR email LIKE ?
+               OR department LIKE ?
+               OR phone LIKE ?
+            ORDER BY id DESC
+        """, (
+            f"%{search}%",
+            f"%{search}%",
+            f"%{search}%",
+            f"%{search}%"
+        )).fetchall()
+    else:
+        students = connection.execute("""
+            SELECT * FROM students
+            ORDER BY id DESC
+        """).fetchall()
+
+    connection.close()
+
+    return render_template(
+        "students.html",
+        students=students,
+        search=search
+    )
+
 
 
 if __name__ == "__main__":
