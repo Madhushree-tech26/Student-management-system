@@ -1,0 +1,71 @@
+body {
+    background-color: #f4f7fb;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+}
+
+.page-title {
+    color: #1d3557;
+    font-weight: 700;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 15px 20px;
+}
+
+.form-control,
+.form-select {
+    border-radius: 8px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+.btn {
+    border-radius: 7px;
+}
+
+.table {
+    vertical-align: middle;
+}
+
+.table th {
+    white-space: nowrap;
+}
+
+.empty-state {
+    padding: 50px 20px;
+    text-align: center;
+}
+
+footer {
+    font-size: 14px;
+}
+
+@media screen and (max-width: 768px) {
+    .page-title {
+        font-size: 24px;
+    }
+
+    .d-flex.justify-content-between {
+        display: block !important;
+    }
+
+    .badge {
+        display: inline-block;
+        margin-top: 12px;
+    }
+
+    table {
+        font-size: 13px;
+    }
+}
